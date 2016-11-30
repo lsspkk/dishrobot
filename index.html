@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>DishRobot</title>
+  <script type="text/javascript" src="scripts/jquery-3.1.1.min.js"></script>
+  <script type="text/javascript" src="scripts/jquery.velocity.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  <script type="text/javascript" src="entities.js"></script>
+  <script type="text/javascript" src="robot.js"></script>
+  <script type="text/javascript" src="world.js"></script>
+    <link rel="stylesheet" type="text/css" href="dishrobot.css" />
+
+</head>
+
+<script type="text/javascript">
+window.onload=function() {
+
+
+  $('#world')[0].addEventListener('mousedown', function (event) {
+    //listening to click wont work, because plate is redrawn before mousedown...
+    //could also get id from the element (target) parameter that mousedown hits
+    //console.log(event);
+    var x =  parseInt(event.layerX)-31;
+    var y = parseInt(event.layerY)-57;
+    var p = undefined;
+    _b("clicked("+x+","+y+ ")");
+
+    p = plates.hitsPlate(x, y);
+    if( p == undefined ) {
+      world.setIdle();
+      return;
+    }
+    var id = p.getId();
+
+    p.setColor('#a66');
+    world.setTarget(p);
+
+    //worldState.touches++;
+    //plates.touch(id);
+
+    if( plates.a.length == 0 )
+      plates.start();
+  });
+
+
+}
+</script>
+
+<body>
+<header>
+
+<h1> DishRobot v. 1.2</h1>
+<img class="logo" src="robot.png"/>
+
+</header>
+
+<!-- Screen on the left -->
+<div id="screen">
+  <svg id="world" width="1000" height="600" xmlns="http://www.w3.org/2000/svg">
+    <!-- Points for some Style -->
+    <circle cx="10" cy="10" r="2" fill="red"/>
+    <circle cx="30" cy="10" r="2" fill="red"/>
+    <circle cx="50" cy="10" r="2" fill="red"/>
+  </svg>
+
+</div>
+
+<!-- Control area on the right -->
+<div id="control">
+  <div class="log" id="log-b">
+  </div>
+
+
+ <div id="score">
+   <div class="field">Level: </div><div class="level"></div><br/>
+
+   <div class="field">Score: </div><div class="points"></div><br/>
+   <div class="field">Broken dishes: </div><div class="broken"></div><br/>
+ </div>
+
+  <div class="btn-group" role="group" aria-label="...">
+    <button type="button" class="btn btn-default" onclick="world.start();">Start</button>
+    <!-- @todo check, why does not stopping work, or does it... -->
+    <button type="button" class="btn btn-default" onclick="world.stop();">Stop</button>
+    <button type="button" class="btn btn-default" onclick="world.reset();">Reset</button>
+  </div>
+
+  <div class="log" id="log-a">
+  </div>
+</div>
+
+</body>
+</html>
