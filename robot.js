@@ -224,7 +224,9 @@ Robot.prototype.svg = function() {
 };
 
 function wipe(id) {
-  $('#world class$="-'+id+'"').remove();
+  $('#world circle[class$="-'+id+'"]').remove();
+  $('#world rect[class$="-'+id+'"]').remove();
+
 }
 Robot.prototype.kill = function() {
   $('circle[class^="robothead"]').attr('fill', '#a22');

@@ -1,8 +1,8 @@
 function _a(str, data) {
-//  $('#log-a').prepend(str + ":"+data + "<br/>");
+  //$('#log-a').prepend(str + ":"+data + "<br/>");
 }
 function _b(str) {
-//  $('#log-b').html(str);
+  //$('#log-b').html(str);
 }
 
 /**
@@ -14,6 +14,7 @@ var worldState = {
   interval : 40,
   timer : 0,
   level : 1,
+  gameOverLimit : 10,
   levelPlates : 5,
   changeLevel : 4,
   touches : 0,
@@ -33,7 +34,7 @@ var worldState = {
     worldState.interval -= change;
     if( worldState.interval < 2 ) {
       worldState.inteval = 2;
-      _b("nopea vauti!");
+      _b("nopea vauhti!");
     }
     worldState.baseSpeed += 0.1;
 
@@ -57,11 +58,10 @@ var worldState = {
 var score = {
   points : 0,
   brokenPlates : 0,
-  gameOverLimit : 10,
   high : [],
   show : function() {
     $('#score .points').html(""+ score.points);
-    $('#score .broken').html(""+ score.broke);
+    $('#score .broken').html(""+ score.brokenPlates);
 
   },
   add : function(p) {
@@ -71,7 +71,7 @@ var score = {
   broken : function() {
     score.brokenPlates++;
     score.show();
-    if( score.brokenPlates == score.gameOverLimit )
+    if( score.brokenPlates == worldState.gameOverLimit )
       world.gameOver();
   },
   init : function() {
@@ -119,6 +119,7 @@ var plates = {
   hitsPlate : function(x, y) {
     for (var i = 0; i < plates.a.length; i++) {
       var p = plates.a[i].hits(x,y);
+      //_a("testlength", plates.a.length);
       if( p != undefined ) {
         return p;
       }
@@ -206,21 +207,24 @@ var world = {
    * Stop the update-function
    */
   reset : function() {
+    window.clearInterval(world.tid);
     world.firstTime = true;
     plates.clearAll();
-    window.clearInterval(world.tid);
     worldState.resetLevel();
-    $('#score .level').html(""+ worldState.level);
     world.tid = 0;
-    score.init();
   },
   /**
-   * On firstTime only draw the plates-line, and robots.
+   * On firstTime only
+   *   draw the plates-line, and robots.
+   *   init score and remove game-over display...
+   *
    * Advance to nextLevel if needed, or
    * update robots, plates, and refresh the SVG content.
    */
   update : function() {
     if( world.firstTime ) {
+      $('#score .level').html(""+ worldState.level);
+      score.init();
       $('.game-over').remove();
       $('#world').append('<path d="M50 190 H 900" stroke="black"/>'
         +'<path d="M50 200 H 900" stroke="black"/>'
@@ -269,7 +273,7 @@ var world = {
     }
   },
   gameOver : function() {
-    world.stop();
+    world.reset();
     $('#world').html('<image class="game-over" xlink:href="robot.png" x="370" y="50" height="300px" width="300px"/>'
     +'<text class="game-over" x="300" y="400" font-family="courier" font-size="80px" fill="#f00">GAME OVER</text>'
     +'<text class="game-over" x="320" y="430" font-family="courier" font-size="16px" fill="#999">Robots, you destroyed my precious dishes!</text>');
@@ -277,3 +281,53 @@ var world = {
   }
 
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var worldPosition;
+
+/**
+ * [mousedown description]
+ *
+ *
+ *   listening to click wont work, because plate is redrawn before mousedown...
+ *   could also get id from the element (target) parameter that mousedown hits
+ *
+ * @param  {[type]} event [description]
+ * @return {[type]}       [description]
+ */
+function mouseDown(event) {
+  //console.log(event);
+  var x =  parseInt(event.layerX)-worldPosition;
+  var y = parseInt(event.layerY)-worldPosition;
+  var p = undefined;
+  //_b("clicked("+x+","+y+ ")");
+
+  p = plates.hitsPlate(x, y);
+  if( p == undefined ) {
+    world.setIdle();
+    return;
+  }
+  var id = p.getId();
+  //_a("..clicked("+x+","+y+ ")", id);
+
+  p.setColor('#a66');
+  world.setTarget(p);
+
+  //worldState.touches++;
+  //plates.touch(id);
+
+  if( plates.a.length == 0 )
+    plates.start();
+}

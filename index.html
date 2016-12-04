@@ -15,35 +15,9 @@
 
 <script type="text/javascript">
 window.onload=function() {
-
-
-  $('#world')[0].addEventListener('mousedown', function (event) {
-    //listening to click wont work, because plate is redrawn before mousedown...
-    //could also get id from the element (target) parameter that mousedown hits
-    //console.log(event);
-    var x =  parseInt(event.layerX)-31;
-    var y = parseInt(event.layerY)-57;
-    var p = undefined;
-    _b("clicked("+x+","+y+ ")");
-
-    p = plates.hitsPlate(x, y);
-    if( p == undefined ) {
-      world.setIdle();
-      return;
-    }
-    var id = p.getId();
-
-    p.setColor('#a66');
-    world.setTarget(p);
-
-    //worldState.touches++;
-    //plates.touch(id);
-
-    if( plates.a.length == 0 )
-      plates.start();
-  });
-
-
+  worldPosition = $('#world')[0].getBoundingClientRect().top;
+  console.log(worldPosition);
+  $('#world')[0].addEventListener('mousedown', mouseDown);
 }
 </script>
 
