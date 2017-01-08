@@ -1,8 +1,8 @@
 function _a(str, data) {
-  //$('#log-a').prepend(str + ":"+data + "<br/>");
+  $('#log-a').prepend(str + ":"+data + "<br/>");
 }
 function _b(str) {
-  //$('#log-b').html(str);
+  $('#log-b').html(str);
 }
 
 /**
@@ -28,8 +28,9 @@ var worldState = {
     worldState.level +=1;
     worldState.levelPlates += 1;
     var change = 1;
-    if( worldState.level < 6 )
-      change = (8-worldState.level);
+    // no need to speed up very fast
+    //if( worldState.level < 6 )
+    //  change = (8-worldState.level);
 
     worldState.interval -= change;
     if( worldState.interval < 2 ) {
@@ -39,7 +40,7 @@ var worldState = {
     worldState.baseSpeed += 0.1;
 
 
-      return true;
+    return true;
   },
   resetLevel : function() {
     worldState.level = 1;
@@ -83,7 +84,9 @@ var score = {
 
 
 
-
+function rect(c, x, y, w, h, s, f) {
+  return '<rect class="'+c+'" x="'+x+ '" y="'+y+ '" width="'+w+'" height="'+ h +'" stroke="'+s+'" fill="'+f+'"/>';
+}
 
 
 
@@ -95,31 +98,42 @@ function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 /**
- * The line of plates, moving from left to right.
+ * The line of dishes, moving from left to right.
  * @type {Object}
  */
-var plates = {
+var dishLine = {
   a : [],
-  rate : 1600,
+  rate : 2500,
+  addPlate : function(startTime) {
+    var r = 25;
+    if( getRandomInt(0,100) < 35 )
+       r = 20;
+    var p = new Plate(r);
+
+    //_a("startTime", startTime);
+
+    p.init(50,200,startTime);
+    dishLine.a.push(p);
+  },
   start : function() {
     var startTime = 0;
-    plates.killed = 0;
-    plates.a = [];
+    dishLine.killed = 0;
+    dishLine.a = [];
     for(var i=0; i < worldState.levelPlates; i++ ) {
-      var r = 25;
-      if( getRandomInt(0,100) < 35 )
-         r = 20;
-      var p =new Plate(r);
-
-      startTime += getRandomInt(700, this.rate);
-      p.init(50,200,startTime);
-      plates.a.push(p);
+      startTime += getRandomInt(1200, dishLine.rate);
+      dishLine.addPlate(startTime);
     }
   },
+  svg : function() {
+    return rect("dishline", 50, 170, 900, 60, "#aaf", "#ccf")
+    +'<path class="dishline" d="M50 180 H 950" stroke="black"/>'
+    +'<path class="dishline" d="M50 200 H 950" stroke="black"/>'
+    +'<path class="dishline" d="M50 220 H 950" stroke="black"/>';
+  },
   hitsPlate : function(x, y) {
-    for (var i = 0; i < plates.a.length; i++) {
-      var p = plates.a[i].hits(x,y);
-      //_a("testlength", plates.a.length);
+    for (var i = 0; i < dishLine.a.length; i++) {
+      var p = dishLine.a[i].hits(x,y);
+      //_a("testlength", dishLine.a.length);
       if( p != undefined ) {
         return p;
       }
@@ -127,41 +141,104 @@ var plates = {
     return undefined;
   },
   touch : function(id) {
-    for (var i = 0; i < plates.a.length; i++) {
-      if( plates.a[i].getId() == id ) {
-          plates.a[i].score();
-          plates.a[i].kill();
-          plates.a.splice(i, 1);
+    for (var i = 0; i < dishLine.a.length; i++) {
+      if( dishLine.a[i].getId() == id ) {
+          dishLine.a.splice(i, 1);
           return;
       }
     }
-    if( plates.a.length == 0 )
-      plates.start();
+    if( dishLine.a.length == 0 )
+      dishLine.start();
   },
   clearAll : function() {
-    for (var i = 0; i < plates.a.length; i++) {
-      plates.a[i].clear();
+    for (var i = 0; i < dishLine.a.length; i++) {
+      dishLine.a[i].clear();
     }
-    plates.a = [];
+    dishLine.a = [];
   },
+  /**
+   * If plate is broken, remove it from alive plates.
+   */
   update : function() {
-    for (var i = 0; i < plates.a.length; i++) {
-      var p = plates.a[i];
-      if( p.x < 900 )
+    var alive = [];
+    var addNewPlates = 0;
+    for (var i = 0; i < dishLine.a.length; i++) {
+      //_a("testlength", dishLine.a.length);
+      var p = dishLine.a[i];
+      if( p.x < 900 ) {
         p.move(worldState.baseSpeed,0);
+        alive.push(p);
+        p.graphics();
+      }
       else {
         score.broken();
-        p.x = 0;
-        p.init(50,200,0);
+        p.setState("broken");
+        p.kill();
+        addNewPlates += 1;
       }
-      p.graphics();
     }
-
+    dishLine.a = alive.slice();
+    var startTime = 0;
+    while( addNewPlates > 0 ) {
+      startTime += getRandomInt(1200, dishLine.rate);
+      dishLine.addPlate(startTime);
+      addNewPlates -= 1;
+    }
   }
 }
 
 
 
+
+var basketTable = {
+  a : [],
+  x : 100,
+  y : 180,
+  size : 8,
+  start : function() {
+    var startTime = 0;
+    basketTable.a = [];
+    for( i = 0; i < basketTable.size; i++ ) {
+      basketTable.a.push(new Basket(basketTable.x + 101*i+3, basketTable.y+2));
+    }
+  },
+  svg : function() {
+    for( i = basketTable.x; i < (basketTable.x + basketTable.size*100); i += 38 ) {
+      $('#world').append(rect("basketTable", i, basketTable.y, 15, 104, "#bbb", "#eee"));
+    }
+    for( i = 0; i < basketTable.a.length; i++ ) {
+      basketTable.a[i].graphics();
+    }
+  },
+  hitsBasket : function(x, y) {
+    for (var i = 0; i < basketTable.a.length; i++) {
+      var b = basketTable.a[i].hits(x,y);
+      //_a("testlength", dishLine.a.length);
+      if( b != undefined ) {
+        return b;
+      }
+    }
+    return undefined;
+  },
+  touch : function(id) {
+    for (var i = 0; i < basketTable.a.length; i++) {
+      if( basketTable.a[i].getId() == id ) {
+          basketTable.a[i].score();
+          basketTable.a[i].kill();
+          basketTable.a.splice(i, 1);
+          return;
+      }
+    }
+  },
+  clearAll : function() {
+    for (var i = 0; i < basketTable.a.length; i++) {
+      basketTable.a[i].clear();
+    }
+    basketTable.a = [];
+  },
+  update : function() {
+  }
+}
 
 
 
@@ -177,8 +254,8 @@ var plates = {
 var world = {
   tid : false,
   i : 0,
-  robot1 : new Robot(250,270, 40, 20, 1, 3),
-  robot2 : new Robot(650,270, 40, 20, 1, 3),
+  robot1 : new Robot(300,290, 40, 30, 1, 3),
+  robot2 : new Robot(600,290, 40, 20, 1, 3),
   firstTime : true,
 
   /**
@@ -188,9 +265,9 @@ var world = {
   start : function() {
     $('#score .level').html(""+ worldState.level);
 
-    plates.start();
+    dishLine.start();
     if( world.tid == false ) {
-      _b("World interval: " + worldState.timer);
+      _a("World interval: ", worldState.interval);
       world.tid = window.setInterval(world.update, worldState.interval);
     }
   },
@@ -209,7 +286,9 @@ var world = {
   reset : function() {
     window.clearInterval(world.tid);
     world.firstTime = true;
-    plates.clearAll();
+    dishLine.clearAll();
+    $('#world .dishline').remove();
+    $('#world .basketTable').remove();
     worldState.resetLevel();
     world.tid = 0;
   },
@@ -226,51 +305,59 @@ var world = {
       $('#score .level').html(""+ worldState.level);
       score.init();
       $('.game-over').remove();
-      $('#world').append('<path d="M50 190 H 900" stroke="black"/>'
-        +'<path d="M50 200 H 900" stroke="black"/>'
-        +'<path d="M50 210 H 900" stroke="black"/>'
-        );
 
-      $('#world').append(world.robot1.svg() + world.robot2.svg());
+      basketTable.start();
+      $('#world').append(basketTable.svg() +dishLine.svg() + world.robot1.svg() + world.robot2.svg());
       world.firstTime = false;
     }
     if( worldState.nextLevel() ) {
       world.stop();
-      plates.clearAll();
-      plates.start();
+      dishLine.clearAll();
+      dishLine.start();
       $('#score .level').html(""+ worldState.level);
       _a("interval: ", worldState.timer);
       world.tid = window.setInterval(world.update, worldState.interval);
 
     }
     worldState.timer += worldState.interval;
+    //_a("worldState.timer", worldState.timer);
 
     world.robot1.update();
     world.robot2.update();
-    plates.update();
+    dishLine.update();
     $("#world").html($("#world").html());
     // do some stuff...
     // no need to recall the function (it's an interval, it'll loop forever)
   },
-  setTarget : function(entity) {
-    _a("setTarget", entity.getId());
-    world.i++;
-    if( world.i % 2 == 1 ) {
-      world.robot1.setTask("grab", entity);
+  waitsForBasket : function(entity) {
+    if( world.robot1.waitsForBasket(entity) )
+      return true;
+    if( world.robot2.waitsForBasket(entity) )
+        return true;
+
+    return false;
+  },
+  putInBasket : function(entity) {
+    _a("putInBasket", entity.getId());
+    var p = world.robot1.putInBasket();
+    if( p == undefined )
+      p = world.robot2.putInBasket();
+
+    if( p != undefined ) {
+      _a("this plate going in", p.getId());
+      return true;
     }
-    if( world.i % 2 == 0 ) {
-      world.robot2.setTask("grab", entity);
-    }
+    return false;
+  },
+  grabPlate : function(entity) {
+    _a("grabPlate", entity.getId());
+    world.robot1.grabIfLogical(entity);
+    world.robot2.grabIfLogical(entity);
   },
   setIdle : function() {
-    world.i++;
     _a("setIdle", world.i);
-    if( world.i % 2 == 1 ) {
-      world.robot1.setTask("idle", undefined);
-    }
-    if( world.i % 2 == 0 ) {
-      world.robot2.setTask("idle", undefined);
-    }
+    world.robot1.setTask("idle", undefined);
+    world.robot2.setTask("idle", undefined);
   },
   gameOver : function() {
     world.reset();
@@ -298,7 +385,9 @@ var world = {
 var worldPosition;
 
 /**
- * [mousedown description]
+ *  @todo keyboard kuuntelijat joka robotille...
+ *
+ *  [mousedown description]
  *
  *
  *   listening to click wont work, because plate is redrawn before mousedown...
@@ -312,22 +401,32 @@ function mouseDown(event) {
   var x =  parseInt(event.layerX)-worldPosition;
   var y = parseInt(event.layerY)-worldPosition;
   var p = undefined;
+  var b = undefined;
   //_b("clicked("+x+","+y+ ")");
 
-  p = plates.hitsPlate(x, y);
-  if( p == undefined ) {
-    world.setIdle();
-    return;
+  b = basketTable.hitsBasket(x, y);
+  if( b != undefined ) {
+    // if plate is ready to go into basket, put it in...
+
+    if( world.waitsForBasket(b) || world.putInBasket(b) )
+      // mistake dont return, let the other robots to try to grab plate
+      //return;
+      _b("one robot is moving a plate");
   }
-  var id = p.getId();
-  //_a("..clicked("+x+","+y+ ")", id);
+  p = dishLine.hitsPlate(x, y);
+
+  if( p == undefined )
+    return;
+
+  if( p.state == "grabbed" )
+    return;
+
+  //_a("..clicked("+x+","+y+ ")", p.getId());
 
   p.setColor('#a66');
-  world.setTarget(p);
+  world.grabPlate(p);
 
-  //worldState.touches++;
-  //plates.touch(id);
 
-  if( plates.a.length == 0 )
-    plates.start();
+  if( dishLine.a.length == 0 )
+    dishLine.start();
 }

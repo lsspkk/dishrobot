@@ -19,6 +19,32 @@ window.onload=function() {
   console.log(worldPosition);
   $('#world')[0].addEventListener('mousedown', mouseDown);
 }
+
+// some animation for absolute located windows
+function show(elem) {
+   $(elem).css('width', '80%');
+   $(elem).css('height', '80%');
+   $(elem).css('left', '10%');
+   $(elem).css('top', '10%');
+}
+function hide(elem) {
+  $(elem).css('width', '0%');
+  $(elem).css('height', '0%');
+  $(elem).css('left', '110%');
+  $(elem).css('top', '10%');
+}
+
+function growShrink(elem) {
+  if( $(elem).hasClass('showAsWindow') ) {
+    $(elem).removeClass('showAsWindow');
+    $(elem).removeClass('window');
+  }
+  else {
+    $(elem).addClass('showAsWindow');
+    $(elem).addClass('window');
+  }
+}
+
 </script>
 
 <body>
@@ -60,7 +86,55 @@ window.onload=function() {
     <button type="button" class="btn btn-default" onclick="world.reset();">Reset</button>
   </div>
 
-  <div class="log" id="log-a">
+  <div class="btn-group" role="group" aria-label="...">
+    <button type="button" class="btn btn-default" onclick="show('.infoWindow');">Info</button>
+    <button type="button" class="btn btn-default" onclick="show('.highScoreWindow');">High Score</button>
+  </div>
+
+
+
+
+
+  <div class="infoWindow window">
+    <button type="button" class="btn btn-default btn-close" onclick="hide('.infoWindow');">x</button>
+
+    <h1>Info</h1>
+    <pre>
+      Your mission is to put as many dishes to baskets as you can!
+
+      Click on dish to grab it with robots.
+      When robot grabs a dish, click on a green basket to move it in.
+
+      When one robot is moving a plate,
+      you can grab plates with the other one.
+    </pre>
+  </div>
+
+  <div class="highScoreWindow window">
+    <button type="button" class="btn btn-default btn-close" onclick="hide('.highScoreWindow');">x</button>
+
+    <h1>High Scores</h1>
+    <pre>
+      1.  ...........................  robot  ....  Trump  ......  500
+      2.  ...........................  robot  ....  Martti  .....  200
+      3.  ...........................  robot  ....  Tero  .......  150
+      4.  ...........................  robot  ....  Clinton  ....  120
+      5.  ...........................  robot  ....  Prince  .....  100
+      6.  ...........................  robot  ....  Jesper ......  90
+      7.  ...........................  robot  ....  Duudsons ....  80
+      8.  ...........................  robot  ....  Obama  ......  70
+      9.  ...........................  robot  ....  Putin  ......  60
+      10. ...........................  robot  ....  Sauli  ......  50
+
+
+    </pre>
+  </div>
+
+
+
+
+
+  <div class="log" id="log-a" onClick="growShrink('#log-a');">
   </div>
 </div>
 

@@ -71,6 +71,13 @@ circle[class^=dish-] {
   transform-origin: 0% 0%;
 }
 
+.dishline {
+  opacity: 0.8;
+}
+rect[class^='basket'] {
+  opacity: 0.5;
+}
+
 rect[class^='robot'] {
   transition: all 5s ease-in-out;
 }
@@ -83,4 +90,29 @@ circle[class^='robothead'] {
 }
 .game-over {
   transition: all 1.5s ease-in-out;
+}
+
+
+.window {
+  background: #fff;
+  position: fixed;
+  padding: 5px 30px 30px;
+  z-index: 2000000;
+  left: 110%;
+  top: -30%;
+  width: 0%;
+  height: 0%;
+  transition: all 1s ease-in-out;
+  box-shadow: 0 0 30px rgba(0,0,0,0.8);
+}
+.btn-close {
+  float: right;
+}
+.showAsWindow {
+  max-width: none;
+  max-height: none;
+  left: 10% !important;
+  top: 10% !important;
+  width: 80% !important;
+  height: 80% !important;
 }
