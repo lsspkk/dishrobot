@@ -284,9 +284,10 @@ Robot.prototype.setTask = function(task, target) {
   if( task == "idle")
       this.setEyeColor("#fff");
 
-
 }
-
+Robot.prototype.printState = function() {
+  return this.id + ":" + this.task.task;
+}
 
 
 Robot.prototype.idle = function() {
@@ -411,13 +412,12 @@ Robot.prototype.putInBasket = function() {
   if( this.task == undefined ) {
     return undefined;
   }
-  if( this.task.arm == undefined ) {
-    _a("the task has no arm", this.task.task);
+  if( this.task.task != "putInBasket" ) {
+    //_a("the task ist not putInBasket", this.task.task);
     return undefined;
   }
-  if( this.task.task != "putInBasket" ) {
-    _a("the task ist not putInBasket", this.task.task);
-
+  if( this.task.arm == undefined ) {
+    _a("the task has no arm", this.task.task);
     return undefined;
   }
 
@@ -471,6 +471,7 @@ Robot.prototype.putInBasket = function() {
 
 Robot.prototype.grabIfLogical = function(entity) {
   if( this.task != undefined && this.task.task != "idle" ) {
+    _a("cant grab, doing something else - ", this.task );
     return;
   }
   var distance = Math.abs(this.x + this.width / 2 - entity.x);

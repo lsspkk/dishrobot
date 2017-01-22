@@ -88,16 +88,27 @@ function rect(c, x, y, w, h, s, f) {
   return '<rect class="'+c+'" x="'+x+ '" y="'+y+ '" width="'+w+'" height="'+ h +'" stroke="'+s+'" fill="'+f+'"/>';
 }
 
-
-
-
 /**
  * Random number between min and max
  */
 function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-/**
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**************************************************************************************************
  * The line of dishes, moving from left to right.
  * @type {Object}
  */
@@ -133,7 +144,8 @@ var dishLine = {
   hitsPlate : function(x, y) {
     for (var i = 0; i < dishLine.a.length; i++) {
       var p = dishLine.a[i].hits(x,y);
-      //_a("testlength", dishLine.a.length);
+      //_a(Math.round(dishLine.a[i].x) + "," + Math.round(dishLine.a[i].y) + "-=-"
+      //  + Math.round(x) + "," + Math.round(y), dishLine.a.length);
       if( p != undefined ) {
         return p;
       }
@@ -247,6 +259,17 @@ var basketTable = {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 /**
  * What the gameworld contains, and and a function to update the world.
  * @type {Object}
@@ -254,8 +277,8 @@ var basketTable = {
 var world = {
   tid : false,
   i : 0,
-  robot1 : new Robot(300,290, 40, 30, 1, 3),
-  robot2 : new Robot(600,290, 40, 20, 1, 3),
+  robot1 : new Robot(335,290, 40, 30, 1, 3),
+  robot2 : new Robot(635,290, 40, 20, 1, 3),
   firstTime : true,
 
   /**
@@ -329,6 +352,9 @@ var world = {
     // do some stuff...
     // no need to recall the function (it's an interval, it'll loop forever)
   },
+  printRobotStates : function() {
+    return  world.robot1.printState() + "-" + world.robot2.printState();
+  },
   waitsForBasket : function(entity) {
     if( world.robot1.waitsForBasket(entity) )
       return true;
@@ -382,7 +408,8 @@ var world = {
 
 
 
-var worldPosition;
+var worldPositionTop = 0;
+var WorldPositionLeft = 0;
 
 /**
  *  @todo keyboard kuuntelijat joka robotille...
@@ -398,11 +425,14 @@ var worldPosition;
  */
 function mouseDown(event) {
   //console.log(event);
-  var x =  parseInt(event.layerX)-worldPosition;
-  var y = parseInt(event.layerY)-worldPosition;
+  var x =  parseInt(event.layerX)-worldPositionLeft;
+  var y = parseInt(event.layerY)-worldPositionTop;
   var p = undefined;
   var b = undefined;
   //_b("clicked("+x+","+y+ ")");
+
+  _a("RobotStates", world.printRobotStates());
+
 
   b = basketTable.hitsBasket(x, y);
   if( b != undefined ) {
@@ -417,11 +447,11 @@ function mouseDown(event) {
 
   if( p == undefined )
     return;
+  //_a("..clicked("+x+","+y+ ")", p.getId());
 
   if( p.state == "grabbed" )
     return;
 
-  //_a("..clicked("+x+","+y+ ")", p.getId());
 
   p.setColor('#a66');
   world.grabPlate(p);

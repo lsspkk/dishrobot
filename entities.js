@@ -136,7 +136,6 @@ function plateBomb(id) {
 Plate.prototype.kill = function() {
   Entity.prototype.kill.call(this);
 
-  worldState.touches++;
 
   var tid = setTimeout(plateBomb, 2000, this.id);
   var killColor = '#801';
@@ -168,6 +167,8 @@ Plate.prototype.hits = function(x, y) {
  */
 Plate.prototype.score = function() {
   score.add(worldState.level);
+  worldState.touches++;
+
   //score.add(Math.round(1000/this.x));
 }
 

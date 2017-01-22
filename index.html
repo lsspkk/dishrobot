@@ -15,8 +15,10 @@
 
 <script type="text/javascript">
 window.onload=function() {
-  worldPosition = $('#world')[0].getBoundingClientRect().top;
-  console.log(worldPosition);
+  worldPositionTop = $('#world')[0].getBoundingClientRect().top;
+  worldPositionLeft = $('#world')[0].getBoundingClientRect().left;
+  console.log("World Position from Top = " + worldPositionTop);
+  console.log("World Position from Left = " + worldPositionLeft);
   $('#world')[0].addEventListener('mousedown', mouseDown);
 }
 
