@@ -1,8 +1,8 @@
 function _a(str, data) {
-  $('#log-a').prepend(str + ":"+data + "<br/>");
+  //$('#log-a').prepend(str + ":"+data + "<br/>");
 }
 function _b(str) {
-  $('#log-b').html(str);
+  //$('#log-b').html(str);
 }
 
 /**
@@ -141,26 +141,16 @@ var dishLine = {
     +'<path class="dishline" d="M50 200 H 950" stroke="black"/>'
     +'<path class="dishline" d="M50 220 H 950" stroke="black"/>';
   },
-  hitsPlate : function(x, y) {
+  detectPlate : function(x, y) {
     for (var i = 0; i < dishLine.a.length; i++) {
       var p = dishLine.a[i].hits(x,y);
-      //_a(Math.round(dishLine.a[i].x) + "," + Math.round(dishLine.a[i].y) + "-=-"
-      //  + Math.round(x) + "," + Math.round(y), dishLine.a.length);
+      _a(Math.round(dishLine.a[i].x) + "," + Math.round(dishLine.a[i].y) + "-=-"
+        + Math.round(x) + "," + Math.round(y), dishLine.a.length);
       if( p != undefined ) {
         return p;
       }
     }
     return undefined;
-  },
-  touch : function(id) {
-    for (var i = 0; i < dishLine.a.length; i++) {
-      if( dishLine.a[i].getId() == id ) {
-          dishLine.a.splice(i, 1);
-          return;
-      }
-    }
-    if( dishLine.a.length == 0 )
-      dishLine.start();
   },
   clearAll : function() {
     for (var i = 0; i < dishLine.a.length; i++) {
@@ -170,6 +160,8 @@ var dishLine = {
   },
   /**
    * If plate is broken, remove it from alive plates.
+   * If plate is on dishLine, move it forward
+   * If plate was grabbed, its still alive.
    */
   update : function() {
     var alive = [];
@@ -177,17 +169,20 @@ var dishLine = {
     for (var i = 0; i < dishLine.a.length; i++) {
       //_a("testlength", dishLine.a.length);
       var p = dishLine.a[i];
-      if( p.x < 900 ) {
-        p.move(worldState.baseSpeed,0);
-        alive.push(p);
-        p.graphics();
-      }
-      else {
+      if( p.x > 900 && p.state == "onDishLine") {
         score.broken();
         p.setState("broken");
         p.kill();
         addNewPlates += 1;
+        continue;
       }
+
+      if( p.state == "onDishLine") {
+        p.move(worldState.baseSpeed,0);
+        p.graphics();
+      }
+
+      alive.push(p);
     }
     dishLine.a = alive.slice();
     var startTime = 0;
@@ -222,7 +217,7 @@ var basketTable = {
       basketTable.a[i].graphics();
     }
   },
-  hitsBasket : function(x, y) {
+  detectBasket : function(x, y) {
     for (var i = 0; i < basketTable.a.length; i++) {
       var b = basketTable.a[i].hits(x,y);
       //_a("testlength", dishLine.a.length);
@@ -277,8 +272,8 @@ var basketTable = {
 var world = {
   tid : false,
   i : 0,
-  robot1 : new Robot(335,290, 40, 30, 1, 3),
-  robot2 : new Robot(635,290, 40, 20, 1, 3),
+  robot1 : new Robot(335,290, 70, 60, 1, 2),
+  robot2 : new Robot(635,290, 40, 30, 2, 5),
   firstTime : true,
 
   /**
@@ -355,35 +350,23 @@ var world = {
   printRobotStates : function() {
     return  world.robot1.printState() + "-" + world.robot2.printState();
   },
-  waitsForBasket : function(entity) {
-    if( world.robot1.waitsForBasket(entity) )
+  handleBasketInput : function(basket) {
+    if( world.robot1.handleBasketInput(basket) )
       return true;
-    if( world.robot2.waitsForBasket(entity) )
-        return true;
+    if( world.robot2.handleBasketInput(basket) )
+      return true;
 
     return false;
   },
-  putInBasket : function(entity) {
-    _a("putInBasket", entity.getId());
-    var p = world.robot1.putInBasket();
-    if( p == undefined )
-      p = world.robot2.putInBasket();
-
-    if( p != undefined ) {
-      _a("this plate going in", p.getId());
-      return true;
-    }
-    return false;
-  },
-  grabPlate : function(entity) {
+  handleGrabInput : function(entity) {
     _a("grabPlate", entity.getId());
-    world.robot1.grabIfLogical(entity);
-    world.robot2.grabIfLogical(entity);
+    world.robot1.handleGrabInput(entity);
+    world.robot2.handleGrabInput(entity);
   },
   setIdle : function() {
     _a("setIdle", world.i);
-    world.robot1.setTask("idle", undefined);
-    world.robot2.setTask("idle", undefined);
+    world.robot1.setTask(TASK.IDLE, undefined);
+    world.robot2.setTask(TASK.IDLE, undefined);
   },
   gameOver : function() {
     world.reset();
@@ -431,31 +414,28 @@ function mouseDown(event) {
   var b = undefined;
   //_b("clicked("+x+","+y+ ")");
 
-  _a("RobotStates", world.printRobotStates());
+  _a("RobotStates ", world.printRobotStates());
 
+  basket = basketTable.detectBasket(x, y);
+  // if plate is ready to go into basket, put it in...
+  if( basket != undefined ) {
 
-  b = basketTable.hitsBasket(x, y);
-  if( b != undefined ) {
-    // if plate is ready to go into basket, put it in...
-
-    if( world.waitsForBasket(b) || world.putInBasket(b) )
-      // mistake dont return, let the other robots to try to grab plate
-      //return;
-      _b("one robot is moving a plate");
+    if( world.handleBasketInput(basket) ) {
+      // dont return, let the other robots to try to grab plate
+      _b("a robot is moving a plate to basket");
+    }
   }
-  p = dishLine.hitsPlate(x, y);
 
-  if( p == undefined )
-    return;
-  //_a("..clicked("+x+","+y+ ")", p.getId());
-
-  if( p.state == "grabbed" )
+  plate = dishLine.detectPlate(x, y);
+  if( plate == undefined )
     return;
 
+  _a("..plate detected at("+x+","+y+ ")", plate.getId());
 
-  p.setColor('#a66');
-  world.grabPlate(p);
-
+  if( plate.state != "grabbed" ) {
+    plate.setColor('#a66');
+    world.handleGrabInput(plate);
+  }
 
   if( dishLine.a.length == 0 )
     dishLine.start();

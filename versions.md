@@ -1,5 +1,19 @@
-# Todo
 
+# Size
+#find . -name '*.js' | xargs wc -l
+     4 ./scripts/jquery-3.1.1.min.js
+     4 ./scripts/jquery.velocity.js
+   608 ./robot.js
+   449 ./world.js
+   273 ./entities.js
+  1338 total
+
+# bugit
+- bugi: ei oikein nappaa lautasesta kiinni
+
+
+
+# Todo
 
 *  Laita tallettamaan High Score -lista.
 
@@ -7,7 +21,6 @@
 *  Laita korit täyttymään
 
 
-* Laita kaks kättä toimimaan
 
 *  Laita täyden korin työntämisestä pisteitä
 
@@ -20,6 +33,12 @@
 *  Laita astiat tarjottimille
 *  Laita likaiset lautaset: tosi likaiset, vähän likaiset
    Paljon likaiset pitää laittaa bioon, tai tulee moitteita
+
+
+
+# Almost Done
+* Laita kaks kättä toimimaan
+* Laita käsiin enemmän niveliä, kun peli edistyy seuraavalle tasolle
 
 
 

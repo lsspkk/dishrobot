@@ -62,7 +62,7 @@ var Plate = function(radius) {
   Entity.call(this);
   this.radius = radius;
   this.color = "#fcfcfc";
-  this.state = "onDishline";
+  this.state = "onDishLine";
 };
 Plate.prototype = Object.create(Entity.prototype);
 Plate.prototype.constructor = Plate;

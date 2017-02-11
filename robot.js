@@ -6,12 +6,82 @@ function toRadians (angle) {
   return angle * (Math.PI / 180);
 }
 
-
 function distanceBetween(loc1, loc2) {
   var a = loc1[0]-loc2[0];
   var b = loc1[1]-loc2[1];
   return Math.sqrt((a*a)+(b*b));
 }
+
+
+
+
+/**
+ * Task class, Base class for Iterator pattern..
+ *  Robots have many limbs, and limbs have changing amount of  arms.
+ *
+ * idle, grab (entity)
+ */
+var TASK = { IDLE : 0,
+             GRAB : 1,
+             WAITFORBASKET : 3,
+             MOVETOBASKET : 4 };
+
+var Task = function(action, target) {
+  this.action = action;
+  this.target = target;
+  this.basket = undefined;
+  this.armId = -1;
+}
+Task.prototype.toString = function() {
+  switch (this.action) {
+    case TASK.IDLE:
+      return "IDLE";
+    case TASK.WAITFORBASKET:
+      return "WAITFORBASKET";
+    case TASK.MOVETOBASKET:
+      return "MOVETOBASKET";
+    case TASK.GRAB:
+      return "GRAB";
+  }
+  return "NO TASK";
+}
+Task.prototype.setBasket = function(basket) {
+  this.basket = basket;
+  if( basket != undefined ) {
+    this.action = TASK.MOVETOBASKET;
+  }
+}
+/**
+ * Test if coordinates hit an entity that is the target plate of this task.
+ */
+Task.prototype.hits = function(x, y) {
+  var e = this.target.hits(x,y);
+  if( e == undefined ) {
+    return false;
+  }
+  return true;
+}
+Task.prototype.changeAction = function(action, target) {
+  this.action = action;
+  this.target = target;
+}
+Task.prototype.setTarget = function(target) {
+  this.target = target;
+}
+
+
+
+/**
+ * Enum for different arm types
+ * - different idle-angles
+ *
+ * @todo different looking grabbing endpoints
+ */
+var ARMTYPE = { LEFT : 0,
+                RIGTH : 1,
+                TOP : 3,
+                BOTTOM : 4 };
+
 
 /**
  * Arm class, also used as forearm.
@@ -21,7 +91,7 @@ function distanceBetween(loc1, loc2) {
  * @param {[type]} height How long the arm is.
  * @param {[type]} angle  Starting angle.
  */
-var Arm = function(x, y, width, length, angle) {
+var Arm = function(x, y, width, length, angle, armType) {
   this.id = Key.new();
   this.x = x;
   this.y = y;
@@ -34,12 +104,73 @@ var Arm = function(x, y, width, length, angle) {
   this.p4 = [0, 0];
   this.setPoints();
   this.speed = 1;
+  this.armType = armType;
+  this.next = undefined;
+  this.task = new Task(TASK.IDLE, undefined);
+  this.graphics();
 }
 Arm.prototype.getId = function() {
   return this.id;
 }
+Arm.prototype.printState = function() {
+  if( this.task != undefined )
+    return this.id + ":" + this.task.action;
+  return this.id + ":has undefined task";
+}
+
+
 Arm.prototype.setSpeed = function(s) {
   this.speed = s;
+}
+Arm.prototype.setNext = function(arm) {
+  this.next = arm;
+}
+
+/**
+ * How far can we reach with this armchain
+ * @return {int} length
+ */
+Arm.prototype.totalLength = function() {
+  if( this.next != undefined ) {
+    return this.length + this.next.totalLength();
+  }
+  return this.length;
+}
+/**
+ * How many arms does exist in the chain "beneath" this arm.
+ * @return {int} amount
+ */
+Arm.prototype.armAmount = function () {
+  if( this.next != undefined )
+    return 1 + this.next.armAmount();
+  else {
+    return 1;
+  }
+}
+Arm.prototype.addSubArm = function(speed) {
+  var le = this.totalLength();
+  var a = this.armAmount()+1;
+  var newLength = le/a;
+
+  if( this.length != newLength ) {
+    this.recursiveAddSubArm(speed, newLength);
+  }
+}
+
+Arm.prototype.recursiveAddSubArm = function(speed, newLength) {
+  this.length = newLength;
+  this.setPoints();
+  this.updateGraphics();
+
+
+  if( this.next == undefined ) {
+    var loc = this.endPoint();
+    this.next = new Arm(loc[0], loc[1], this.width, newLength, this.angle, this.armType);
+    this.next.setSpeed(speed);
+  }
+  else {
+    this.next.recursiveAddSubArm(speed, newLength);
+  }
 }
 
 /**
@@ -94,11 +225,11 @@ Arm.prototype.turnCW = function(d) {
     this.angle -= d;
   }
   this.setPoints();
-};
+}
 Arm.prototype.move =  function(x, y) {
     this.x = this.x+x;
     this.y = this.y+y;
-};
+}
 
 Arm.prototype.graphics = function() {
   //_a("getid", this.id);
@@ -106,7 +237,13 @@ Arm.prototype.graphics = function() {
     this.kill();
 
   $('#world').append(this.svg("arm-"+this.id, "#ddd", "#777"));
-};
+}
+Arm.prototype.updateGraphics = function() {
+  $('#world .arm-'+this.id).remove();
+  $('#world').append(this.svg("arm-"+this.id, "#ddd", "#777"));
+  //console.log(this.svg("arm-"+this.id, "#ddd", "#777"));
+}
+
 Arm.prototype.svg =  function(cname, color1, color2) {
 
   return '<path class="' + cname + '" d="M ' + this.p1[0] +' ' + this.p1[1]
@@ -133,6 +270,20 @@ Arm.prototype.turnTowardsPoint = function(x, y) {
     this.turnCW(this.speed);
 
 }
+Arm.prototype.turnSlowlyTowardsPoint = function(x, y) {
+  var direction = Math.atan2((-(this.y-y)), -(this.x-x));
+  if( direction < 0 )
+    direction += 2 * Math.PI;
+  direction *= 180/ Math.PI;
+
+  if( (this.angle - direction +180)%360 < 180 )
+    this.turnCCW(this.speed/2.5);
+  else
+    this.turnCW(this.speed/2.5);
+}
+
+
+
 /**
  * Turn only if needed.
  * @param  {[type]} a     Target angle.
@@ -152,53 +303,139 @@ Arm.prototype.turnTowardsAngle = function(a) {
 }
 
 
+Arm.prototype.grab = function(t) {
+  if( t.target == undefined ) {
+    _a("Target undefined in GRAB.", this.id);
+    return false;
+  }
+  var x = t.target.x;
+  var y = t.target.y;
+
+  if( t.target.state == "broken") {
+    _a("Plate was broken, I go back to Idle", "");
+    t.changeAction(TASK.IDLE, undefined);
+    t.armId = -1;
+    return false;
+  }
+  if( t.target.state == "grabbed") {
+    _a("Plate was grabbed by someone, I go back to Idle", "");
+    t.changeAction(TASK.IDLE, undefined);
+    t.armId = -1;
+    return false;
+  }
+
+  this.turnTowardsPoint(x, y);
+  var loc = this.endPoint();
+  if( t.hits(loc[0], loc[1]) ) {
+    _a("arm:"+this.id+" grabbed plate", t.target.getId());
+    t.target.setState("grabbed");
+    t.changeAction(TASK.WAITFORBASKET, t.target);
+    t.armId = this.id;
+
+    return true;
+  }
+  return false;
+}
+
+Arm.prototype.idle = function(armsCount, currentCount) {
+  var niceAngle;
+  if( this.armType == ARMTYPE.LEFT )
+    niceAngle = 45 + (90/armsCount)*(currentCount-1);
+  if( this.armType == ARMTYPE.RIGHT )
+  niceAngle = 135 - (90/armsCount)*(currentCount-1);
+
+  this.turnTowardsAngle(niceAngle);
+}
 
 
+Arm.prototype.moveToBasket = function(task) {
+  if( task.basket.hits(task.target.x, task.target.y) ) {
+    _a("plate" + task.target.getId() +" hits basket ", task.basket.getId());
+    task.target.score();
+    task.target.kill();
+    task.changeAction(TASK.IDLE, undefined);
+    task.setBasket(undefined);
+    return true;
+  }
+  var loc1 = task.basket.getCenterCoordinates();
+  this.turnSlowlyTowardsPoint(loc1[0], loc1[1]);
+  return false;
 
+/*
+  // @todo have to think about this:
 
+  // if the elbow is too close to the basket center,
+  // we got problems, the plate will go too far...
+  // should turn arm away from it
+  // this code did it with two part arms
+
+  var f = forearm...
+
+  if( distanceBetween(loc1, loc) < (f.length +25) ) {
+    _a("Too close, turning away("+Math.round(loc2[0])+","+Math.round(loc2[1])+")-", Math.round(distanceBetween(loc1, loc2)));
+    this.turnArmTowardsIdle(a);
+  }
+  else {
+    a.turnTowardsPoint(loc1[0], loc1[1]);
+  }
+  f.setLocation(a.endPoint());
+  f.turnTowardsPoint(loc1[0], loc1[1]);
+  this.task.target.setLocation(f.endPoint());
+*/
+}
 
 
 /**
- * Task class for robot actions = strings, and targets.
- *
- * idle, grab (entity)
+ * iterate through arm chain... for every task.
  */
-var Task = function(task, target) {
-  this.task = task;
-  this.target = target;
-  this.basket = undefined;
-  this.arm = undefined;
+Arm.prototype.iterate = function() {
+  this.iterateParams(undefined, this.task, this.armAmount(), 1, 0);
 }
-Task.prototype.setBasket = function(basket) {
-  this.basket = basket;
-  if( basket != undefined ) {
-    this.task = "putInBasket";
-  }
-}
-/**
- * Test if coordinates hit an entity that is the target plate of this task.
- */
-Task.prototype.hits = function(arm) {
-  if( this.task == "idle" )
-    return false;
+Arm.prototype.iterateParams = function(parent, task, armsCount, currentCount, i) {
+  i++;
+  if( task == undefined )
+    return;
+  if( parent != undefined )
+    this.setLocation(parent.endPoint());
 
-  var loc = arm.endPoint();
-  var e = this.target.hits(loc[0],loc[1]);
-  if( e == undefined ) {
-    return false;
+
+  switch (task.action) {
+    case TASK.GRAB:
+      if( this.grab(task) ) {
+        break;
+      }
+      else if( this.next != undefined ) {
+        this.next.iterateParams(this, task, armsCount, currentCount+1,i);
+      }
+      break;
+    case TASK.MOVETOBASKET:
+      if( this.moveToBasket(task) )
+        break;
+      else if( this.next != undefined ) {
+        this.next.iterateParams(this, task, armsCount, currentCount+1,i);
+      }
+      else {
+        task.target.setLocation(this.endPoint())
+      }
+      break;
+    case TASK.IDLE:
+      this.idle(armsCount, currentCount);
+      if( this.next != undefined ) {
+        this.next.iterateParams(this, task, armsCount, currentCount+1,i);
+      }
+      break;
+    case TASK.WAITFORBASKET:
+        break;
+    default:
   }
-  if( this.task == "grab" ) {
-    dishLine.touch(e.getId());
-  }
-  this.target.setState("grabbed");
-  this.task = "waitsForBasket";
-  this.arm = arm;
-  return true;
+  this.updateGraphics();
 }
-Task.prototype.setTask = function(task, target) {
-  this.task = task;
-  this.target = target;
-}
+
+
+
+
+
+
 
 
 
@@ -218,20 +455,27 @@ var Robot = function(x, y, width, height, armSpeed, forearmSpeed) {
   this.y = y;
   this.width = width;
   this.height = height;
-  this.arm1 = new Arm(x-10,y+height/10, width/5, 50, 225);
-  this.arm2 = new Arm(x+width+10,y+height/10, width/5, 50, 315);
+  this.arm1 = new Arm(x-10,y+height/10, width/5, 120, 225, ARMTYPE.LEFT);
+  this.arm2 = new Arm(x+width+10,y+height/10, width/5, 120, 315, ARMTYPE.RIGHT);
   this.arm1.setSpeed(armSpeed);
   this.arm2.setSpeed(armSpeed);
-  this.forearm1 = new Arm(0, 0, width/6, 80, 0);
-  this.forearm2 = new Arm(0, 0, width/6, 80, 180);
-  this.forearm1.setSpeed(forearmSpeed);
-  this.forearm2.setSpeed(forearmSpeed);
+  this.addSubArms(armSpeed);
+  this.addSubArms(armSpeed);
+  this.addSubArms(armSpeed);
+  this.addSubArms(armSpeed);
+  this.addSubArms(forearmSpeed);
+  this.addSubArms(armSpeed);
+  this.addSubArms(forearmSpeed);
+  this.addSubArms(forearmSpeed);
+  this.addSubArms(forearmSpeed);
+  this.addSubArms(armSpeed);
+  this.addSubArms(armSpeed);
+  this.addSubArms(armSpeed);
+  this.addSubArms(forearmSpeed);
+  this.addSubArms(forearmSpeed);
+  this.addSubArms(forearmSpeed);
+  this.addSubArms(forearmSpeed);
 
-  this.tid = false;
-  this.task = new Task("idle", undefined);
-
-  this.taskArm1 = new Task("idle", undefined);
-  this.taskArm2 = new Task("idle", undefined);
 
   $('#world').append(this.svg());
   $("#world").html($("#world").html());
@@ -254,9 +498,6 @@ Robot.prototype.svg = function() {
     + '" r="3" fill="#fff" stroke="#778"/>';
 };
 
-Robot.prototype.setEyeColor = function(color) {
-  $('.roboteye-'+this.id).attr('fill', color);
-}
 
 
 function wipe(id) {
@@ -273,81 +514,28 @@ Robot.prototype.kill = function() {
   var tid = setTimeout(wipe, 5000, this.id);
 }
 
-Robot.prototype.setTask = function(task, target) {
-  //if( task == "grab" && this.taskArm1.task == "idle") {
-  //  this
-  //}  @todo kaksi kättä....
-  //
-  this.task.setTask(task, target);
-  if( task == "grab")
-    this.setEyeColor("#2a2");
-  if( task == "idle")
-      this.setEyeColor("#fff");
 
+Robot.prototype.addSubArms = function(speed) {
+  this.arm1.addSubArm(speed);
+  this.arm2.addSubArm(speed);
 }
+
+Robot.prototype.setToIdle = function() {
+  this.setArmToIdle(this.arm1);
+  this.setArmToIdle(this.arm2);
+}
+Robot.prototype.setArmToIdle = function(a) {
+  a.task.changeAction(TASK.IDLE, undefined);
+  a.task.armId = -1;
+}
+
+
 Robot.prototype.printState = function() {
-  return this.id + ":" + this.task.task;
+  return this.arm1.printState() + "--" + this.arm2.printState();
 }
 
 
-Robot.prototype.idle = function() {
-  this.turnArmTowardsIdle(this.arm1);
-  this.forearm1.setLocation(this.arm1.endPoint());
-  this.forearm1.turnTowardsAngle(160);
 
-  this.turnArmTowardsIdle(this.arm2);
-  this.forearm2.setLocation(this.arm2.endPoint());
-  this.forearm2.turnTowardsAngle(20);
-}
-
-
-function clearEyes(id, color) {
-  $('.roboteye-'+id).attr('fill', color);
-
-}
-Robot.prototype.grab = function() {
-  var x = this.task.target.x;
-  var y = this.task.target.y;
-  if( Math.abs(this.x + this.width/2 - x) > 400 ) {
-    _a("Plate out of reach", x);
-    this.setTask("idle", undefined);
-    this.setEyeColor("#822");
-    var tid = window.setTimeout(clearEyes, 1000, this.id, "#fff");
-    return;
-  }
-  if( this.task.target.state == "broken") {
-    _a("Plate was broken, I go back to Idle", "");
-    this.setTask("idle", undefined);
-    this.setEyeColor("#522");
-    var tid = window.setTimeout(clearEyes, 1000, this.id, "#fff");
-    return;
-  }
-  if( this.task.target.state == "grabbed") {
-    _a("Plate was grabbed by someone, I go back to Idle", "");
-    this.setTask("idle", undefined);
-    this.setEyeColor("#300");
-    var tid = window.setTimeout(clearEyes, 1000, this.id, "#fff");
-    return;
-  }
-
-
-  this.arm1.turnTowardsPoint(x, y);
-  this.forearm1.setLocation(this.arm1.endPoint());
-  this.forearm1.turnTowardsPoint(x, y);
-
-  this.arm2.turnTowardsPoint(x, y);
-  this.forearm2.setLocation(this.arm2.endPoint());
-  this.forearm2.turnTowardsPoint(x, y);
-
-  if( this.task.hits(this.forearm1) ) {
-    this.setEyeColor("#fff");
-    return;
-  }
-  if( this.task.hits(this.forearm2) ) {
-    this.setEyeColor("#fff");
-    return;
-  }
-}
 
 
 /**
@@ -356,168 +544,82 @@ Robot.prototype.grab = function() {
  *
  * @param  {basket} basket the one that user clicked
  */
-Robot.prototype.waitsForBasket = function(basket) {
-  if( this.task.task == "waitsForBasket" ) {
+Robot.prototype.handleBasketInput = function(basket) {
+  if( this.handleBasketInputArm(basket, this.arm1) )
+    return true;
 
-    var maxReach = 0;
-    var startLocation = [0, 0];
-    if( this.task.arm.getId() == this.forearm1.getId() ) {
-      maxReach = this.arm1.length + this.forearm1.length;
-      startLocation = [this.arm1.x, this.arm1.y];
-    }
-    else if( this.task.arm.getId() == this.forearm2.getId() ) {
-      maxReach = this.arm2.length + this.forearm2.length;
-      startLocation = [this.arm2.x, this.arm2.y];
-    }
+  return this.handleBasketInputArm(basket, this.arm2);
+}
 
+Robot.prototype.handleBasketInputArm = function(basket, arm) {
+  if( arm.task == undefined ) {
+    _a("no task in arm", arm.getId());
+    return false;
+  }
+  if( arm.task.action == TASK.WAITFORBASKET ) {
+    _a("handleBasketInputArm:"+arm.getId()+", basket:", basket.getId());
+
+    //if( arm.task.armId != arm.getId() ) {
+    //  return false;
+    //}
+    var maxReach = arm.totalLength();
+    var startLocation = [arm.x, arm.y];
     var distanceToReach = distanceBetween(basket.getCenterCoordinates(), startLocation) - (basket.width/2) + 10;
 
     if( distanceToReach > maxReach ) {
       _a("Basket too far: "+ Math.round(distanceToReach) +", can reach: ", Math.round(maxReach));
+      if( arm.task.target != undefined ) {
+        _a("plate released: ", arm.task.target.getId());
+
+        arm.task.target.setState("onDishLine");
+        // free the grabbed entity
+      }
+      arm.task.changeAction(TASK.IDLE, undefined);
+      arm.task.armId = -1;
       return false;
     }
 
-    this.task.setBasket(basket);
-    this.setEyeColor("#8f8");
+    arm.task.setBasket(basket);
+    arm.task.changeAction(TASK.MOVETOBASKET, arm.task.target);
     return true;
   }
   return false;
 }
 
-/**
- * turnArmTowardsIdle
- *
- * turns arm towards right or left idle angle,
- * compared to robots position
- *
- * @param  {arm} a [description]
- */
-Robot.prototype.turnArmTowardsIdle = function(a){
-  var angle = 30;
-
-  if( a.x > this.x ) // right arm
-    angle = 150;
-
-  _b("Towards - "+ angle);
-  a.turnTowardsAngle(angle);
-}
-/**
- * ota taskista forearm, ja käännä sitä ja sen kättä kohti koria,
-* sijoita koriin, jos osuu, ja pisteytä
-*
-*  @kesken tässä.. :)
- * @return {[type]} [description]
- */
-Robot.prototype.putInBasket = function() {
-  if( this.task == undefined ) {
-    return undefined;
-  }
-  if( this.task.task != "putInBasket" ) {
-    //_a("the task ist not putInBasket", this.task.task);
-    return undefined;
-  }
-  if( this.task.arm == undefined ) {
-    _a("the task has no arm", this.task.task);
-    return undefined;
-  }
 
 
 
-  var a = undefined;
-  var f = undefined;
-  if( this.task.arm.getId() == this.forearm1.getId() ) {
-      a = this.arm1;
-      f = this.forearm1;
-  }
-  if( this.task.arm.getId() == this.forearm2.getId() ) {
-      a = this.arm2;
-      f = this.forearm2;
-  }
-
-  if( a == undefined ) {
-    _a("this robot did not grab", this.task.basket);
-    this.task.setTask("idle", undefined);
-    return undefined;
-  }
-
-  var loc = this.task.arm.endPoint();
-  if( this.task.basket.hits(loc[0], loc[1]) ) {
-    _a("plate" + this.task.target.getId() +" hits basket ", this.task.basket.getId());
-    this.task.target.score();
-    this.task.target.kill();
-    this.task.setTask("idle", undefined);
-    this.task.setBasket(undefined);
-    return undefined;
-  }
-  var loc1 = this.task.basket.getCenterCoordinates();
-  var loc2 = a.endPoint();
-  // if the elbow is too close to the basket center, turn arm away from it
-  if( distanceBetween(loc1, loc2) < (f.length +25) ) {
-    _a("Too close, turning away("+Math.round(loc2[0])+","+Math.round(loc2[1])+")-", Math.round(distanceBetween(loc1, loc2)));
-    this.turnArmTowardsIdle(a);
-  }
-  else {
-    a.turnTowardsPoint(loc1[0], loc1[1]);
-  }
-  f.setLocation(a.endPoint());
-  f.turnTowardsPoint(loc1[0], loc1[1]);
-  this.task.target.setLocation(f.endPoint());
-
-
-  this.setEyeColor("#8f8");
-  return this.task.target;
-}
-
-
-Robot.prototype.grabIfLogical = function(entity) {
-  if( this.task != undefined && this.task.task != "idle" ) {
-    _a("cant grab, doing something else - ", this.task );
-    return;
-  }
+Robot.prototype.handleGrabInput = function(entity) {
+  _a("handleGrabInput", entity.getId());
   var distance = Math.abs(this.x + this.width / 2 - entity.x);
-  if( distance > this.arm1.length + this.forearm2.length ) {
-    _a("too far: ", distance);
-    return;
-  }
-  _a("Im going to grab it ", entity.getId());
+  if( this.arm1.task.action == TASK.IDLE ) {
+    _a("arm:"+this.arm1.getId()+" trying to grab", entity.getId());
+    if( distance > 10000 ) {//this.arm1.totalLength() ) {
+      _a("too far for arm1: ", distance);
+    }
+    else {
+      _a("My arm1 is grabbing this ", entity.getId());
+      this.arm1.task.changeAction(TASK.GRAB, entity);
+      return;
+    }
 
-  this.setTask("grab", entity);
+  }
+  if( this.arm2.task.action == TASK.IDLE ) {
+    _a("arm:"+this.arm2.getId()+" trying to grab", entity.getId());
+    if( distance > 10000 ) { //this.arm2.totalLength() ) {
+      _a("too far for arm2: ", distance);
+      return;
+    }
+    else {
+      _a("My arm2 is grabbing this ", entity.getId());
+      this.arm2.task.changeAction(TASK.GRAB, entity);
+    }
+  }
 }
 
 
 Robot.prototype.update = function() {
-  if( this.task.task == "grab" )
-    this.grab();
-  else if( this.task.task == "putInBasket" ){
-    this.putInBasket();
-  }
-  else if( this.task.task == "waitsForBasket" ){
-    this.setEyeColor("#229");
-    return;
-  } else {
-    this.idle();
-  }
-  this.arm1.graphics();
-  this.arm2.graphics();
-  this.forearm1.graphics();
-  this.forearm2.graphics();
+  this.arm1.iterate();
+  this.arm2.iterate();
   //$("#world").html($("#world").html());
 }
-Robot.prototype.update2 = function() {
-  this.arm1.turnCW(this.armSpeed);
-  var loc = this.arm1.elbowLocation();
-  this.forearm1.setLocation(loc[0], loc[1]);
-  this.arm2.turnCCW(this.armSpeed);
-  loc = this.arm2.elbowLocation();
-  this.forearm2.setLocation(loc[0], loc[1]);
-  this.forearm1.turnCW(this.forearmSpeed);
-  this.forearm2.turnCCW(this.forearmSpeed);
-
-  this.arm1.graphics();
-  this.arm2.graphics();
-  this.forearm1.graphics();
-  this.forearm2.graphics();
-  $("#world").html($("#world").html());
-    // do some stuff...
-    // no need to recall the function (it's an interval, it'll loop forever)
-};

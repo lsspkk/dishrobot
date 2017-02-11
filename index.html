@@ -4,7 +4,8 @@
   <title>DishRobot</title>
   <script type="text/javascript" src="scripts/jquery-3.1.1.min.js"></script>
   <script type="text/javascript" src="scripts/jquery.velocity.js"></script>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+    integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 
   <script type="text/javascript" src="entities.js"></script>
   <script type="text/javascript" src="robot.js"></script>
@@ -17,8 +18,15 @@
 window.onload=function() {
   worldPositionTop = $('#world')[0].getBoundingClientRect().top;
   worldPositionLeft = $('#world')[0].getBoundingClientRect().left;
+
   console.log("World Position from Top = " + worldPositionTop);
   console.log("World Position from Left = " + worldPositionLeft);
+
+  //worldPositionTop = $('#world').position().top;
+  //worldPositionLeft = $('#world').position().left;
+  console.log("World Position v2 from Top = " + worldPositionTop);
+  console.log("World Position v2 from Left = " + worldPositionLeft);
+
   $('#world')[0].addEventListener('mousedown', mouseDown);
 }
 
@@ -52,9 +60,9 @@ function growShrink(elem) {
 <body>
 <header>
 
-<h1> DishRobot v. 1.2</h1>
+<h1> DishRobot v. 1.3</h1>
 <img class="logo" src="robot.png"/>
-
+<div id="instructions">Grab and move dishes to the light green baskets!</div>
 </header>
 
 <!-- Screen on the left -->

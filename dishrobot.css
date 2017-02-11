@@ -91,7 +91,17 @@ circle[class^='robothead'] {
 .game-over {
   transition: all 1.5s ease-in-out;
 }
-
+#instructions {
+  text-shadow: 0px 0px 2px #00ff76;
+font-weight: bold;
+padding: 0;
+font-size: 110%;
+font-family: courier;
+letter-spacing: 0.2em;
+position: absolute;
+left: 160px;
+top: 57px;
+}
 
 .window {
   background: #fff;
