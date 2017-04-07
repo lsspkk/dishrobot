@@ -172,7 +172,12 @@ Arm.prototype.recursiveAddSubArm = function(speed, newLength) {
     this.next.recursiveAddSubArm(speed, newLength);
   }
 }
-
+Arm.prototype.replaceSpeeds = function(oldSpeed, newSpeed) {
+  if( this.speed == oldSpeed )
+    this.speed = newSpeed;
+  if( this.next != undefined )
+    this.next.replaceSpeeds(oldSpeed, newSpeed);
+}
 /**
  * Set the corner points of rectangle that is the arm.
  */
@@ -449,7 +454,7 @@ Arm.prototype.iterateParams = function(parent, task, armsCount, currentCount, i)
  * @todo Add two tasks, one for each hand,
  *       Add angle limits, that can not turn arms over the body.
  */
-var Robot = function(x, y, width, height, armSpeed, forearmSpeed) {
+var Robot = function(x, y, width, height, armSpeed, armSpeed2) {
   this.id = Key.new();
   this.x = x;
   this.y = y;
@@ -463,23 +468,40 @@ var Robot = function(x, y, width, height, armSpeed, forearmSpeed) {
   this.addSubArms(armSpeed);
   this.addSubArms(armSpeed);
   this.addSubArms(armSpeed);
-  this.addSubArms(forearmSpeed);
+  this.addSubArms(armSpeed2);
   this.addSubArms(armSpeed);
-  this.addSubArms(forearmSpeed);
-  this.addSubArms(forearmSpeed);
-  this.addSubArms(forearmSpeed);
+  this.addSubArms(armSpeed2);
+  this.addSubArms(armSpeed2);
+  this.addSubArms(armSpeed2);
   this.addSubArms(armSpeed);
   this.addSubArms(armSpeed);
   this.addSubArms(armSpeed);
-  this.addSubArms(forearmSpeed);
-  this.addSubArms(forearmSpeed);
-  this.addSubArms(forearmSpeed);
-  this.addSubArms(forearmSpeed);
-
+  this.addSubArms(armSpeed2);
+  this.addSubArms(armSpeed2);
+  this.addSubArms(armSpeed2);
+  this.addSubArms(armSpeed2);
+  this.armSpeed = armSpeed;
+  this.armSpeed2 = armSpeed2;
 
   $('#world').append(this.svg());
   $("#world").html($("#world").html());
 };
+
+/**
+ * lets update the armchain, replacing old speeds with new
+ * @param {[type]} armSpeed  [description]
+ * @param {[type]} armSpeed2 [description]
+ */
+Robot.prototype.setSpeed = function(newSpeed, newSpeed2) {
+    this.arm1.replaceSpeeds(this.armSpeed, newSpeed);
+    this.arm1.replaceSpeeds(this.armSpeed2, newSpeed2);
+    this.arm2.replaceSpeeds(this.armSpeed, newSpeed);
+    this.arm2.replaceSpeeds(this.armSpeed2, newSpeed2);
+
+    this.armSpeed = newSpeed;
+    this.armSpeed2 = newSpeed2
+}
+
 Robot.prototype.svg = function() {
   return '<rect class="robotbody-'+this.id+'" x="'+ this.x+ '" y="'+ this.y
     + '" width="'+ this.width+ '" height="'+ this.height

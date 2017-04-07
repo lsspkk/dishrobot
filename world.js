@@ -19,6 +19,8 @@ var worldState = {
   changeLevel : 4,
   touches : 0,
   entityes : 0,
+  plateDistanceMin : 800,
+  plateDistanceMax : 2000,
   nextLevel : function() {
     if( worldState.touches <= worldState.changeLevel )
       return false;
@@ -33,6 +35,9 @@ var worldState = {
     //  change = (8-worldState.level);
 
     worldState.interval -= change;
+    worldState.plateDistanceMax = worldState.plateDistanceMax / 1.1;
+    worldState.plateDistanceMin = worldState.plateDistanceMin / 1.1;
+
     if( worldState.interval < 2 ) {
       worldState.inteval = 2;
       _b("nopea vauhti!");
@@ -114,7 +119,6 @@ function getRandomInt(min, max) {
  */
 var dishLine = {
   a : [],
-  rate : 2500,
   addPlate : function(startTime) {
     var r = 25;
     if( getRandomInt(0,100) < 35 )
@@ -131,7 +135,7 @@ var dishLine = {
     dishLine.killed = 0;
     dishLine.a = [];
     for(var i=0; i < worldState.levelPlates; i++ ) {
-      startTime += getRandomInt(1200, dishLine.rate);
+      startTime += getRandomInt(worldState.plateDistanceMin, worldState.plateDistanceMax);
       dishLine.addPlate(startTime);
     }
   },
@@ -187,7 +191,7 @@ var dishLine = {
     dishLine.a = alive.slice();
     var startTime = 0;
     while( addNewPlates > 0 ) {
-      startTime += getRandomInt(1200, dishLine.rate);
+      startTime += getRandomInt(worldState.plateDistanceMin, worldState.plateDistanceMax);
       dishLine.addPlate(startTime);
       addNewPlates -= 1;
     }
@@ -197,21 +201,32 @@ var dishLine = {
 
 
 
+
+
+
+
+
+
+/*************************************************************************/
+
 var basketTable = {
   a : [],
-  x : 100,
-  y : 180,
-  size : 8,
+  x : 150,
+  y : 230,
+  amount: 6,
+  size:110,
   start : function() {
     var startTime = 0;
     basketTable.a = [];
-    for( i = 0; i < basketTable.size; i++ ) {
-      basketTable.a.push(new Basket(basketTable.x + 101*i+3, basketTable.y+2));
+    for( var i = 0; i < basketTable.amount; i++ ) {
+      if( i != 1 && i != 4 ) {
+        basketTable.a.push(new Basket(basketTable.x + basketTable.size*i+3, basketTable.y+2, basketTable.size, 50));
+      }
     }
   },
   svg : function() {
-    for( i = basketTable.x; i < (basketTable.x + basketTable.size*100); i += 38 ) {
-      $('#world').append(rect("basketTable", i, basketTable.y, 15, 104, "#bbb", "#eee"));
+    for( i = basketTable.x; i < (basketTable.x + basketTable.amount*basketTable.size); i += 38 ) {
+      $('#world').append(rect("basketTable", i, basketTable.y, 15, 54, "#bbb", "#eee"));
     }
     for( i = 0; i < basketTable.a.length; i++ ) {
       basketTable.a[i].graphics();
@@ -272,8 +287,8 @@ var basketTable = {
 var world = {
   tid : false,
   i : 0,
-  robot1 : new Robot(335,290, 70, 60, 1, 2),
-  robot2 : new Robot(635,290, 40, 30, 2, 5),
+  robot1 : new Robot(305,290, 70, 60, 0.5, 1),
+  robot2 : new Robot(625,290, 40, 30, 2, 3),
   firstTime : true,
 
   /**
@@ -336,6 +351,18 @@ var world = {
       _a("interval: ", worldState.timer);
       world.tid = window.setInterval(world.update, worldState.interval);
 
+      if( worldState.level == 3 )
+        world.robot1.setSpeed(4, 6);
+
+      if( worldState.level == 6 )
+        world.robot2.setSpeed(4, 6);
+
+      if( worldState.level == 9 )
+        world.robot2.setSpeed(8, 12);
+
+      if( worldState.level == 12 )
+        world.robot1.setSpeed(15, 22);
+
     }
     worldState.timer += worldState.interval;
     //_a("worldState.timer", worldState.timer);
@@ -370,10 +397,8 @@ var world = {
   },
   gameOver : function() {
     world.reset();
-    $('#world').html('<image class="game-over" xlink:href="robot.png" x="370" y="50" height="300px" width="300px"/>'
-    +'<text class="game-over" x="300" y="400" font-family="courier" font-size="80px" fill="#f00">GAME OVER</text>'
-    +'<text class="game-over" x="320" y="430" font-family="courier" font-size="16px" fill="#999">Robots, you destroyed my precious dishes!</text>');
-    $('.game-over').css('opacity', 1);
+    show('.gameOverWindow');
+    console.log("should save score:"+score.points);
   }
 
 };

@@ -1,0 +1,44 @@
+{
+    "players": [
+        {
+            "name": "Trump",
+            "score": "1000"
+        },
+        {
+            "name": "Martti",
+            "score": "900"
+        },
+        {
+            "name": "Terror",
+            "score": "800"
+        },
+        {
+            "name": "Clinton",
+            "score": "750"
+        },
+        {
+            "name": "Prince",
+            "score": "720"
+        },
+        {
+            "name": "Jesper",
+            "score": "600"
+        },
+        {
+            "name": "Duudsons",
+            "score": "500"
+        },
+        {
+            "name": "Obama",
+            "score": "499"
+        },
+        {
+            "name": "Putin",
+            "score": "400"
+        },
+        {
+            "name": "Sauli",
+            "score": "399"
+        }
+    ]
+}

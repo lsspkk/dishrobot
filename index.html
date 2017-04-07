@@ -10,12 +10,14 @@
   <script type="text/javascript" src="entities.js"></script>
   <script type="text/javascript" src="robot.js"></script>
   <script type="text/javascript" src="world.js"></script>
+  <script type="text/javascript" src="score.js"></script>
     <link rel="stylesheet" type="text/css" href="dishrobot.css" />
 
 </head>
 
 <script type="text/javascript">
 window.onload=function() {
+  readHighScore();
   worldPositionTop = $('#world')[0].getBoundingClientRect().top;
   worldPositionLeft = $('#world')[0].getBoundingClientRect().left;
 
@@ -54,6 +56,7 @@ function growShrink(elem) {
     $(elem).addClass('window');
   }
 }
+
 
 </script>
 
@@ -99,6 +102,7 @@ function growShrink(elem) {
   <div class="btn-group" role="group" aria-label="...">
     <button type="button" class="btn btn-default" onclick="show('.infoWindow');">Info</button>
     <button type="button" class="btn btn-default" onclick="show('.highScoreWindow');">High Score</button>
+    <button type="button" class="btn btn-default" onclick="show('.gameOverWindow');">Game Over</button>
   </div>
 
 
@@ -120,24 +124,29 @@ function growShrink(elem) {
     </pre>
   </div>
 
+
+  <div class="gameOverWindow window">
+    <button type="button" class="btn btn-default btn-close" onclick="hide('.gameOverWindow');">x</button>
+    <svg id="endgraphics" xmlns="http://www.w3.org/2000/svg">
+    <image class="game-over" xlink:href="robot.png" x="70" y="10" height="300px" width="300px"/>
+    <text class="game-over" x="20" y="400" font-family="courier" font-size="80px" fill="#f00">GAME OVER</text>
+    <text class="game-over" x="30" y="430" font-family="courier" font-size="16px" fill="#999">Robots, you destroyed my precious dishes!</text>
+    </svg>
+
+    <div class="madeHighScore">
+      <label for="player">You made high score, who are you?</label>
+      <div class="input-group" role="group" aria-label="...">
+      <span class="input-group-addon" id="basic-addon3">NAME</span>
+      <input type="text" class="form-control" id="player" aria-describedby="basic-addon3" maxlength="7">
+      <span class="input-group-addon" id="basic-addon2"><button class="btn btn-default" onclick="saveHighScore(score.points)" aria-describedby="basic-addon3">ENTER</button></span>
+    </div>
+    </div>
+  </div>
   <div class="highScoreWindow window">
     <button type="button" class="btn btn-default btn-close" onclick="hide('.highScoreWindow');">x</button>
-
     <h1>High Scores</h1>
-    <pre>
-      1.  ...........................  robot  ....  Trump  ......  500
-      2.  ...........................  robot  ....  Martti  .....  200
-      3.  ...........................  robot  ....  Tero  .......  150
-      4.  ...........................  robot  ....  Clinton  ....  120
-      5.  ...........................  robot  ....  Prince  .....  100
-      6.  ...........................  robot  ....  Jesper ......  90
-      7.  ...........................  robot  ....  Duudsons ....  80
-      8.  ...........................  robot  ....  Obama  ......  70
-      9.  ...........................  robot  ....  Putin  ......  60
-      10. ...........................  robot  ....  Sauli  ......  50
-
-
-    </pre>
+    <div id="highScore">
+  </div>
   </div>
 
 

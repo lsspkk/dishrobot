@@ -192,10 +192,10 @@ Plate.prototype.score = function() {
  * Two SVG circles.
  * Can test if clicked coordinates are inside the plate-area.
  */
-var Basket = function(x, y) {
+var Basket = function(x, y, width, height) {
   Entity.call(this);
-  this.height = 100;
-  this.width = 100;
+  this.height = height;
+  this.width = width;
   this.color = "#7fc";
   Entity.prototype.init.call(this, x, y, 0);
 };
